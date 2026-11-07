@@ -1,7 +1,7 @@
 // quick game of ping pong
-const width = 40;
-const height = 15;
-const paddleLength = 10;
+const width = 20;
+const height = 10;
+const paddleLength = 3; //fixed the length and size
 
 // players and ball
 let p1 = 6;

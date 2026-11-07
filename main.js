@@ -18,11 +18,12 @@ if (process.stdin.isTTY && process.stdin.setRawMode) {
 }
 
 function handleKey(key) {
-    if (key === '\u001b[A') {
-        p1 = Math.max(0, p1 - 1);
-    } else if (key === '\u001b[B') {
-        p1 = Math.min(height - paddleLength, p1 + 1);
-    } else if (key === 'w' || key === 'W') {
+    //if (key === '\u001b[A') {
+       // p1 = Math.max(0, p1 - 1);
+    //} else if (key === '\u001b[B') {
+        //p1 = Math.min(height - paddleLength, p1 + 1);
+    //}
+    if (key === 'w' || key === 'W') {
         p2 = Math.max(0, p2 - 1);
     } else if (key === 's' || key === 'S') {
         p2 = Math.min(height - paddleLength, p2 + 1);

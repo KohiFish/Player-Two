@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 const NueralNetwork = require('./nn.js');
 const Matrix = require('./matrix.js');
 =======

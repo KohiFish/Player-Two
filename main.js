@@ -66,11 +66,7 @@ function handleKey(key) {
     if (key === '\u001b[A') {
         p1 = Math.max(0, p1 -1);
     } else if (key === '\u001b[B') {
-<<<<<<< HEAD
         p1 = Math.min(height - paddleLength, p1 + 1);
-=======
-        p1 = Math.min(height - paddleLength, p1 +1);
->>>>>>> 764e7ba061e590443d9435b1b93e100c8166450d
     }
     //if (key === 'w' || key === 'W') {
         //p2 = Math.max(0, p2 - 1);

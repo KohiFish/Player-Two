@@ -1,13 +1,5 @@
 
 const NueralNetwork = require('./nn.js');
-const Matrix = require('./matrix.js');
-=======
-const brain = require('brain.js');
-const net= newbrain.neuralNetwork({
-    hiddenLayers: []
-});
->>>>>>> 764e7ba061e590443d9435b1b93e100c8166450d
-
 // quick game of ping pong
 const width = 50;
 const height = 10;
@@ -162,7 +154,6 @@ function drawP2() {
 }
 
 setInterval(() => {
-    aiMove();
     update();
     drawP1();
     drawP2();

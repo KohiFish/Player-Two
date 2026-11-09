@@ -116,4 +116,4 @@ class NeuralNetwork {
 
 }
 
-module.exports = nn;
+module.exports = NeuralNetwork;

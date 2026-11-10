@@ -19,8 +19,6 @@ function p2Actions() {
   return action;
 }
 
-//make training system here
-
 // players and ball
 let p1 = 6;
 let p2 = 6;
@@ -89,12 +87,27 @@ function update() {
       reset();
     }
   }
+}
 
-  //make score system here
+//make score system here
 
-  function p2Move() {
-    const state = getState();
-    const output = p2Actions();
+function p2Move() {
+  const state = getState();
+
+  brain.train(state, getTargetAction());
+
+  const output = brain.feedforward(state);
+  const action = output.indexOf(Math.max(...output));
+
+  if (action === 0) {
+    p2 = Math.max(0, p2 - 1);
+  } else if (action === 2) {
+    p2 = Math.min(height - paddleLengthe, p2 + 1);
+
+    const paddleCenter = p2 + paddleLength;
+
+    if (ballY < paddleCenter) return [1, 0, 0]; //up
+    if (ballY > paddleCenter) return [0, 0, 1]; //down
 
     if (output === 0) {
       p2 = Math.max(0, p2 - 1);

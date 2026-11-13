@@ -103,31 +103,34 @@ function scoring() {
     return;
   }
 }
-
-let lastAction = 0;
+// were running low on time so this fix is made with ai
+let moveDirection = 1;
 let moveCounter = 0;
 
 function p2Move() {
   const state = getState();
   const output = brain.feedforward(state);
-  let action;
+
+  // Occasionally let the NN choose its direction
   if (Math.random() < 0.3) {
-    action = Math.floor(Math.random() * 3);
-  } else {
-    action = output.indexOf(Math.max(...output));
+    const action = output.indexOf(Math.max(...output));
+
+    if (action === 0) moveDirection = -1;
+    if (action === 2) moveDirection = 1;
   }
 
-  moveCounter++;
-  if (moveCounter >= 5) {
-    action = (lastAction + 1) % 3;
-    moveCounter >= 0;
-  }
-  lastAction = action;
+  // Move consistently
+  p2 += moveDirection;
 
-  if (action === 0) {
-    p2 = Math.max(0, p2 - 1);
-  } else if (action === 2) {
-    p2 = Math.min(height - paddleLength, p2 + 1);
+  // Reverse at the edges
+  if (p2 <= 0) {
+    p2 = 0;
+    moveDirection = 1;
+  }
+
+  if (p2 >= height - paddleLength) {
+    p2 = height - paddleLength;
+    moveDirection = -1;
   }
 }
 

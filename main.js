@@ -79,7 +79,7 @@ function update() {
   }
 
   if (ballX >= width - 1 && rightPaddleRange) {
-    ballX = width -2;
+    ballX = width - 2;
     vx = -Math.abs(vx);
   }
   scoring();
@@ -91,7 +91,6 @@ function scoring() {
     reset();
     return;
   }
-
   if (ballX >= width - 1) {
     scoreP1++;
     reset();

@@ -85,13 +85,17 @@ function update() {
 }
 
 function scoring() {
-  if (ballX <= 0) {
+  if (ballX <= 0 && !(
+    ballY >= p1 && ballY < p1 + paddleLength
+  )) {
     scoreP2++;
     reset();
     return;
   }
-   if (ballX >= width -1) {
-    scoreP1++;
+   if (ballX <= width -1 && !(
+    ballY >= p2 && ballY < p2 + paddleLength
+  )) {
+    scoreP2++;
     reset();
     return;
   }
@@ -99,6 +103,9 @@ function scoring() {
 
 function p2Move() {
   const state = getState();
+
+  brain.train(state, getTargetAction());
+
   const output = brain.feedforward(state);
   const action = output.indexOf(Math.max(...output));
   
@@ -107,6 +114,19 @@ function p2Move() {
     p2 = Math.max(0, p2 - 1);
   } else if (action === 2) {
     p2 = Math.min(height - paddleLength, p2 + 1);
+
+    const paddleCenter = p2 + paddleLength;
+
+    if (ballY < paddleCenter) return [1, 0, 0]; //up
+    if (ballY > paddleCenter) return [0, 0, 1]; //down
+
+    if (output === 0) {
+      p2 = Math.max(0, p2 - 1);
+    } else if (output === 1) {
+      p2 = p2;
+    } else if (output === 2) {
+      p2 = Math.min(height - paddleLength, p2 + 1);
+    }
   }
 }
 

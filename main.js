@@ -94,15 +94,11 @@ function update() {
 }
 
 function scoring() {
-  if (ballX <= 0 && !(
-    ballY >= p1 && ballY < p1 + paddleLength
-  )) {
+  if (ballX <= 0 && !(ballY >= p1 && ballY < p1 + paddleLength)) {
     scoreP2++;
     reset();
   }
-   if (ballX <= width -1 && !(
-    ballY >= p2 && ballY < p2 + paddleLength
-  )) {
+  if (ballX <= width - 1 && !(ballY >= p2 && ballY < p2 + paddleLength)) {
     scoreP2++;
     reset();
   }
@@ -124,6 +120,7 @@ function p2Move() {
     const paddleCenter = p2 + paddleLength;
 
     if (ballY < paddleCenter) return [1, 0, 0]; //up
+    if ((ballY = paddleCenter)) return [0, 1, 0]; //should stay the same
     if (ballY > paddleCenter) return [0, 0, 1]; //down
 
     if (output === 0) {

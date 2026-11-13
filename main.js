@@ -27,6 +27,10 @@ let ballY = 7;
 let vx = 1;
 let vy = 1;
 
+//scores
+let scoreP1 = 0;
+let scoreP2 = 0;
+
 if (process.stdin.isTTY && process.stdin.setRawMode) {
   process.stdin.setRawMode(true);
   process.stdin.resume();
@@ -89,7 +93,20 @@ function update() {
   }
 }
 
-//make score system here
+function scoring() {
+  if (ballX <= 0 && !(
+    ballY >= p1 && ballY < p1 + paddleLength
+  )) {
+    scoreP2++;
+    reset();
+  }
+   if (ballX <= width -1 && !(
+    ballY >= p2 && ballY < p2 + paddleLength
+  )) {
+    scoreP2++;
+    reset();
+  }
+}
 
 function p2Move() {
   const state = getState();
@@ -102,7 +119,7 @@ function p2Move() {
   if (action === 0) {
     p2 = Math.max(0, p2 - 1);
   } else if (action === 2) {
-    p2 = Math.min(height - paddleLengthe, p2 + 1);
+    p2 = Math.min(height - paddleLength, p2 + 1);
 
     const paddleCenter = p2 + paddleLength;
 

@@ -82,6 +82,7 @@ function update() {
     ballX = width -2;
     vx = -Math.abs(vx);
   }
+  scoring();
 }
 
 function scoring() {
@@ -117,30 +118,18 @@ function reset() {
   vy = Math.random() < 0.5 ? -1 : 1;
 }
 
-function drawP1() {
+function draw() {
+  console.clear();
   console.log(`PLAYER: ${scoreP1} | NN: ${scoreP2}`);
+
   for (let y = 0; y < height; y++) {
     let row = "";
+    
     for (let x = 0; x < width; x++) {
       if (x === ballX && y === ballY) {
         row += "O";
       } else if (x === 0 && y >= p1 && y <= p1 + paddleLength) {
         row += "|";
-      } else {
-        row += ".";
-      }
-    }
-    console.log(row);
-  }
-}
-
-function drawP2() {
-  console.clear();
-  for (let y = 0; y < height; y++) {
-    let row = "";
-    for (let x = 0; x < width; x++) {
-      if (x === ballX && y === ballY) {
-        row += "0";
       } else if (x === width - 1 && y >= p2 && y <= p2 + paddleLength) {
         row += "|";
       } else {
@@ -148,11 +137,10 @@ function drawP2() {
       }
     }
     console.log(row);
+    }
   }
-}
 
 setInterval(() => {
-  drawP1();
-  drawP2();
   update();
+  draw();
 }, 100);

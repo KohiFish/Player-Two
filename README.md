@@ -1,2 +1,2 @@
 # Player-Two
-Neural network pong with dylan
+Neural network pong with dylan(the bum)

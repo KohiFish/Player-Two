@@ -98,10 +98,18 @@ function scoring() {
   }
 }
 
+let lastAction = 0;
+let moveCounter = 0;
+
 function p2Move() {
   const state = getState();
   const output = brain.feedforward(state);
-  const action = output.indexOf(Math.max(...output));
+  let action;
+  if (Math.random() < 0.3) {
+    action = Math.floor(Math.random() * 3);
+  } else {
+    action = output.indexOf(Math.max(...output));
+  }
   
   console.log("State:", state);
   console.log("NN output:", output);

@@ -107,8 +107,6 @@ function scoring() {
 function p2Move() {
   const state = getState();
 
-  brain.train(state, getTargetAction());
-
   const output = brain.feedforward(state);
   const action = output.indexOf(Math.max(...output));
 

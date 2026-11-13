@@ -5,10 +5,10 @@ const height = 10;
 const paddleLength = 3; //fixed the length and size
 
 // outputs: 0 - move up, 1 - stay, 2 - move down
-const brain = new NeuralNetwork(3, 3, 3);
+const brain = new NeuralNetwork(5, 3, 3);
 
 function getState() {
-  return [ballX / width, ballY / height, p2 / height];
+  return [ballX / width, ballY / height, p2 / (height - paddleLength), (vx + 1) / 2, (vy + 1) / 2];
 }
 
 function p2Actions() {
@@ -102,6 +102,10 @@ function p2Move() {
   const state = getState();
   const output = brain.feedforward(state);
   const action = output.indexOf(Math.max(...output));
+  
+  console.log("State:", state);
+  console.log("NN output:", output);
+  console.log("Action:", action);
 
   if (action === 0) {
     p2 = Math.max(0, p2 - 1);

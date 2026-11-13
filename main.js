@@ -73,66 +73,40 @@ function update() {
   const leftPaddleRange = ballY >= p1 && ballY <= p1 + paddleLength;
   const rightPaddleRange = ballY >= p2 && ballY <= p2 + paddleLength;
 
-  if (ballX <= 0) {
-    if (leftPaddleRange) {
-      ballX = 1;
-      vx = Math.abs(vx);
-    } else {
-      reset();
-    }
-    return;
+  if (ballX <= 0 && leftPaddleRange) {
+    ballX = 1;
+    vx = Math.abs(vx);
   }
 
-  if (ballX >= width - 1) {
-    if (rightPaddleRange) {
-      ballX = width - 2;
-      vx = -Math.abs(vx);
-    } else {
-      reset();
-    }
+  if (ballX >= width - 1 && rightPaddleRange) {
+    ballX = width -2;
+    vx = -Math.abs(vx);
   }
 }
 
 function scoring() {
-  if (ballX <= 0 && !(
-    ballY >= p1 && ballY < p1 + paddleLength
-  )) {
+  if (ballX <= 0) {
     scoreP2++;
     reset();
+    return;
   }
-   if (ballX <= width -1 && !(
-    ballY >= p2 && ballY < p2 + paddleLength
-  )) {
-    scoreP2++;
+   if (ballX >= width -1) {
+    scoreP1++;
     reset();
+    return;
   }
 }
 
 function p2Move() {
   const state = getState();
-
-  brain.train(state, getTargetAction());
-
   const output = brain.feedforward(state);
   const action = output.indexOf(Math.max(...output));
+  
 
   if (action === 0) {
     p2 = Math.max(0, p2 - 1);
   } else if (action === 2) {
     p2 = Math.min(height - paddleLength, p2 + 1);
-
-    const paddleCenter = p2 + paddleLength;
-
-    if (ballY < paddleCenter) return [1, 0, 0]; //up
-    if (ballY > paddleCenter) return [0, 0, 1]; //down
-
-    if (output === 0) {
-      p2 = Math.max(0, p2 - 1);
-    } else if (output === 1) {
-      p2 = p2;
-    } else if (output === 2) {
-      p2 = Math.min(height - paddleLength, p2 + 1);
-    }
   }
 }
 
@@ -144,7 +118,7 @@ function reset() {
 }
 
 function drawP1() {
-  console.clear();
+  console.log(`PLAYER: ${scoreP1} | NN: ${scoreP2}`);
   for (let y = 0; y < height; y++) {
     let row = "";
     for (let x = 0; x < width; x++) {
@@ -167,7 +141,7 @@ function drawP2() {
     for (let x = 0; x < width; x++) {
       if (x === ballX && y === ballY) {
         row += "0";
-      } else if (x === 0 && y >= p2 && y <= p2 + paddleLength) {
+      } else if (x === width - 1 && y >= p2 && y <= p2 + paddleLength) {
         row += "|";
       } else {
         row += ".";
@@ -178,7 +152,7 @@ function drawP2() {
 }
 
 setInterval(() => {
-  update();
   drawP1();
   drawP2();
+  update();
 }, 100);

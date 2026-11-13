@@ -111,10 +111,13 @@ function p2Move() {
     action = output.indexOf(Math.max(...output));
   }
   
-  console.log("State:", state);
-  console.log("NN output:", output);
-  console.log("Action:", action);
-
+  moveCounter++;
+  if (moveCounter >= 5) {
+    action = (lastAction + 1) % 3;
+    moveCounter = 0
+  }
+  lastAction = action;
+  
   if (action === 0) {
     p2 = Math.max(0, p2 - 1);
   } else if (action === 2) {

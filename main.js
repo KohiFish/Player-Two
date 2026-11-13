@@ -5,10 +5,16 @@ const height = 10;
 const paddleLength = 3; //fixed the length and size
 
 // outputs: 0 - move up, 1 - stay, 2 - move down
-const brain = new NeuralNetwork(5, 3, 3);
+const brain = new NeuralNetwork(5, 5, 3);
 
 function getState() {
-  return [ballX / width, ballY / height, p2 / (height - paddleLength), (vx + 1) / 2, (vy + 1) / 2];
+  return [
+    ballX / width,
+    ballY / height,
+    p2 / (height - paddleLength),
+    (vx + 1) / 2,
+    (vy + 1) / 2,
+  ];
 }
 
 function p2Actions() {
@@ -110,14 +116,14 @@ function p2Move() {
   } else {
     action = output.indexOf(Math.max(...output));
   }
-  
+
   moveCounter++;
   if (moveCounter >= 5) {
     action = (lastAction + 1) % 3;
-    moveCounter = 0
+    moveCounter >= 0;
   }
   lastAction = action;
-  
+
   if (action === 0) {
     p2 = Math.max(0, p2 - 1);
   } else if (action === 2) {
@@ -138,7 +144,7 @@ function draw() {
 
   for (let y = 0; y < height; y++) {
     let row = "";
-    
+
     for (let x = 0; x < width; x++) {
       if (x === ballX && y === ballY) {
         row += "O";
@@ -151,8 +157,8 @@ function draw() {
       }
     }
     console.log(row);
-    }
   }
+}
 
 setInterval(() => {
   update();

@@ -57,16 +57,6 @@ function handleKey(key) {
   //}
 }
 
-process.stdin.on("data", (chunk) => {
-  const key = chunk.toString();
-
-  if (key === "\u0003") {
-    process.exit();
-  }
-
-  handleKey(key);
-});
-
 function update() {
   ballX += vx;
   ballY += vy;

@@ -1,4 +1,3 @@
-const NeuralNetwork = require("./nn.js");
 // quick game of ping pong
 const width = 50;
 const height = 10;
@@ -37,11 +36,13 @@ let vy = 1;
 let scoreP1 = 0;
 let scoreP2 = 0;
 
-if (process.stdin.isTTY && process.stdin.setRawMode) {
-  process.stdin.setRawMode(true);
-  process.stdin.resume();
-  process.stdin.setEncoding("utf-8");
-}
+document.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowUp") {
+    p1 = Math.max(0, p1 - 1);
+  }
+
+  if (event.key === "ArrowDown") p1 = Math.min(height - paddleLength, p1 + 1);
+});
 
 function handleKey(key) {
   if (key === "\u001b[A") {
@@ -141,30 +142,40 @@ function reset() {
   vy = Math.random() < 0.5 ? -1 : 1;
 }
 
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
 function draw() {
-  console.clear();
-  console.log(`PLAYER: ${scoreP1} | NN: ${scoreP2}`);
+  const scaleX = canvas.width / width;
+  const scaleY = canvas.height / height;
 
-  for (let y = 0; y < height; y++) {
-    let row = "";
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    for (let x = 0; x < width; x++) {
-      if (x === ballX && y === ballY) {
-        row += "O";
-      } else if (x === 0 && y >= p1 && y <= p1 + paddleLength) {
-        row += "|";
-      } else if (x === width - 1 && y >= p2 && y <= p2 + paddleLength) {
-        row += "|";
-      } else {
-        row += ".";
-      }
-    }
-    console.log(row);
-  }
+  ctx.fillStyle = "white";
+
+  //Ball
+  ctx.fillRect(ballX * scaleX, ballY * scaleY, scaleX, scaleY);
+
+  //controllable paddle
+  ctx.fillRect(0, p1 * scaleY, scaleX, paddleLength * scaleY);
+
+  //nn paddle
+  ctx.fillRect(
+    canvas.width - scaleX,
+    p2 * scaleY,
+    scaleX,
+    paddleLength * scaleY,
+  );
+
+  ctx.font = "20px Arial";
+  ctx.fillText(`PLAYER: ${scoreP1} | NN: ${scoreP2}`, 20, 30);
 }
 
 function gameLoop() {
   update();
   draw();
-  requestAnimationFrame(gameLoop);
+  setTimeout(() => requestAnimationFrame(gameLoop), 100);
 }
+
+gameLoop();

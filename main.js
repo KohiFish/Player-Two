@@ -163,7 +163,8 @@ function draw() {
   }
 }
 
-setInterval(() => {
+function gameLoop() {
   update();
   draw();
-}, 100);
+  requestAnimationFrame(gameLoop);
+}

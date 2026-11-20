@@ -2,3 +2,4 @@ node_modules/
 *.js
 # Local Netlify folder
 .netlify
+!game.js

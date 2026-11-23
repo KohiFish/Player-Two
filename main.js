@@ -4,17 +4,16 @@ const height = 10;
 const paddleLength = 3; //fixed the length and size
 
 // outputs: 0 - move up, 1 - stay, 2 - move down
-const brain = new NeuralNetwork(6, 8, 3);
+const brain = new NeuralNetwork(5, 5, 3);
 brain.learning_rate = 0.01;
 
 function getState() {
   return [
-    ballX / (width - 1),
-    ballY / (height - 1),
+    ballX / width,
+    ballY / height,
     p2 / (height - paddleLength),
     (vx + 1) / 2,
     (vy + 1) / 2,
-    (ballY - (p2 + paddleLength / 2)) / height,
   ];
 }
 
@@ -37,11 +36,6 @@ let vy = 1;
 //scores
 let scoreP1 = 0;
 let scoreP2 = 0;
-
-var previousState = null;
-var previousAction = null;
-var exploreChance = 1;
-var gamesSeen = 0;
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowUp") {
@@ -67,54 +61,27 @@ function handleKey(key) {
 function scoring() {
   if (ballX <= 0) {
     scoreP2++;
-    if (previousState !== null) {
-      brain.trainQ(previousState, previousAction, 2, getState(), true);
-    }
-    previousState = null;
-    previousAction = null;
     reset();
-    gamesSeen++;
-    exploreChance = Math.max(0.03, 0.2 * Math.exp(-gamesSeen / 200));
     return;
   }
   if (ballX >= width - 1) {
     scoreP1++;
-    if (previousState !== null) {
-      brain.trainQ(previousState, previousAction, -2, getState(), true);
-    }
-    previousState = null;
-    previousAction = null;
     reset();
-    gamesSeen++;
-    exploreChance = Math.max(0.03, 0.2 * Math.exp(-gamesSeen / 200));
     return;
   }
 }
 // were running low on time so this fix is made with ai
 let moveDirection = 1;
 let moveCounter = 0;
-// icl I asked codex to explain this part to me
+
 function p2Move() {
-  const state = getState();
-  if (previousState !== null) {
-    brain.trainQ(previousState, previousAction, 0, state, false);
-  }
-
   const output = brain.feedforward(getState());
-
-  let action;
-  if (Math.random() < exploreChance) {
-    action = Math.floor(Math.random() * 3);
-  } else {
-    action = output.indexOf(Math.max(...output));
-  }
+  const action = output.indexOf(Math.max(...output));
 
   if (action === 0) p2 -= 1;
   if (action === 2) p2 += 1;
 
   p2 = Math.max(0, Math.min(height - paddleLength, p2));
-  previousState = state;
-  previousAction = action;
 }
 
 function reset() {
@@ -160,22 +127,41 @@ function gameLoop() {
   setTimeout(() => requestAnimationFrame(gameLoop), 100);
 }
 
+function trainP2() {
+  const state = getState();
+  const paddleCenter = p2 + paddleLength / 2;
+
+  const targets = [0, 0, 0];
+
+  if (vx > 0) {
+    if (ballY < paddleCenter - 0.5) {
+      targets[0] = 1;
+    } else if (ballY > paddleCenter + 0.5) {
+      targets[2] = 1;
+    } else {
+      targets[1] = 1;
+    }
+  } else {
+    targets[1] = 1;
+  }
+  brain.train(state, targets);
+}
+
 function bouncing() {
-  if (ballY <= 0) {
-    ballY = 1;
-    vy = Math.abs(vy);
-  } else if (ballY >= height - 1) {
-    ballY = height - 2;
-    vy = -Math.abs(vy);
+  if (ballY <= 0 || ballY >= height - 1) {
+    vy *= -1;
   }
 
-  const paddleRange = (paddleY) =>
-    ballY >= paddleY && ballY < paddleY + paddleLength;
+  const leftPaddleRange = ballY >= p1 && ballY <= p1 + paddleLength;
 
-  if (ballX <= 1 && vx < 0 && paddleRange(p1)) {
+  const rightPaddleRange = ballY >= p2 && ballY <= p2 + paddleLength;
+
+  if (ballX <= 0 && leftPaddleRange) {
     ballX = 1;
     vx = Math.abs(vx);
-  } else if (ballX >= width - 2 && vx > 0 && paddleRange(p2)) {
+  }
+
+  if (ballX >= width - 1 && rightPaddleRange) {
     ballX = width - 2;
     vx = -Math.abs(vx);
   }
@@ -185,7 +171,10 @@ function update() {
   ballX += vx;
   ballY += vy;
 
+  trainP2();
   p2Move();
+  console.log(action, ballY, p2);
+
   bouncing();
   scoring();
 }

@@ -57,31 +57,6 @@ function handleKey(key) {
   //}
 }
 
-function update() {
-  ballX += vx;
-  ballY += vy;
-
-  p2Move();
-
-  if (ballY <= 0 || ballY >= height - 1) {
-    vy *= -1;
-  }
-
-  const leftPaddleRange = ballY >= p1 && ballY <= p1 + paddleLength;
-  const rightPaddleRange = ballY >= p2 && ballY <= p2 + paddleLength;
-
-  if (ballX <= 0 && leftPaddleRange) {
-    ballX = 1;
-    vx = Math.abs(vx);
-  }
-
-  if (ballX >= width - 1 && rightPaddleRange) {
-    ballX = width - 2;
-    vx = -Math.abs(vx);
-  }
-  scoring();
-}
-
 function scoring() {
   if (ballX <= 0) {
     scoreP2++;

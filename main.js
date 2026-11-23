@@ -10,11 +10,11 @@ brain.learning_rate = 0.01;
 function getState() {
   return [
     ballX / (width - 1),
-    ballY / (height -1),
+    ballY / (height - 1),
     p2 / (height - paddleLength),
     (vx + 1) / 2,
     (vy + 1) / 2,
-    (ballY -(p2 +paddleLength / 2)) / height
+    (ballY - (p2 + paddleLength / 2)) / height,
   ];
 }
 
@@ -99,7 +99,7 @@ function p2Move() {
   if (previousState !== null) {
     brain.trainQ(previousState, previousAction, 0, state, false);
   }
-  
+
   const output = brain.feedforward(getState());
 
   let action;
@@ -160,7 +160,6 @@ function gameLoop() {
   setTimeout(() => requestAnimationFrame(gameLoop), 100);
 }
 
-
 function bouncing() {
   if (ballY <= 0) {
     ballY = 1;
@@ -176,19 +175,9 @@ function bouncing() {
   if (ballX <= 1 && vx < 0 && paddleRange(p1)) {
     ballX = 1;
     vx = Math.abs(vx);
-  } else if (
-    ballX >= width - 2 &&
-    vx > 0 &&
-    paddleRange(p2)
-  ) {
+  } else if (ballX >= width - 2 && vx > 0 && paddleRange(p2)) {
     ballX = width - 2;
     vx = -Math.abs(vx);
-
-    if (previousState !== null) {
-      brain.trainQ(previousState, previousAction, 1, getState(), false);
-      previousState = null;
-      previousAction = null;
-    }
   }
 }
 

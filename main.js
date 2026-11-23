@@ -4,16 +4,17 @@ const height = 10;
 const paddleLength = 3; //fixed the length and size
 
 // outputs: 0 - move up, 1 - stay, 2 - move down
-const brain = new NeuralNetwork(5, 5, 3);
+const brain = new NeuralNetwork(6, 8, 3);
 brain.learning_rate = 0.01;
 
 function getState() {
   return [
-    ballX / width,
-    ballY / height,
+    ballX / (width + 1),
+    ballY / (height -1),
     p2 / (height - paddleLength),
     (vx + 1) / 2,
     (vy + 1) / 2,
+    (ballY -(p2 +paddleLength / 2)) / height
   ];
 }
 
@@ -36,6 +37,11 @@ let vy = 1;
 //scores
 let scoreP1 = 0;
 let scoreP2 = 0;
+
+var previousState = null;
+var previousAction = null;
+var exploreChance = 1;
+var gamesSeen = 0;
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "ArrowUp") {
@@ -73,10 +79,21 @@ function scoring() {
 // were running low on time so this fix is made with ai
 let moveDirection = 1;
 let moveCounter = 0;
-
+// icl I asked codex to explain this part to me
 function p2Move() {
+  const state = getState();
+  if (previousState !== null) {
+    brain.trainQ(previousState, previousAction, 0, state, false);
+  }
+  
   const output = brain.feedforward(getState());
-  const action = output.indexOf(Math.max(...output));
+
+  let action;
+  if (Math.random() < exploreChance) {
+    action = Math.floor(Math.random() * 3);
+  } else {
+    action = output.indexOf(Math.max(...values));
+  }
 
   if (action === 0) p2 -= 1;
   if (action === 2) p2 += 1;

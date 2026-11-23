@@ -74,7 +74,7 @@ let moveDirection = 1;
 let moveCounter = 0;
 
 function p2Move() {
-  const output = brain.feedfoward(getState());
+  const output = brain.feedforward(getState());
   const action = output.indexOf(Math.max(...output));
 
   if (action === 0) p2 -= 1;
@@ -132,15 +132,18 @@ function trainP2() {
 
   const targets = [0, 0, 0];
 
-  if (vx > 0)
+  if (vx > 0) {
     if (ballY < paddleCenter - 0.5) {
-      target[0] = 1;
+      targets[0] = 1;
     } else if (ballY > paddleCenter + 0.5) {
-      target[2] = 1;
+      targets[2] = 1;
     } else {
-      target[1] = 1;
+      targets[1] = 1;
     }
-  brain.train(state, target);
+  } else {
+    targets[1] = 1;
+  }
+  brain.train(state, targets);
 }
 
 function update() {

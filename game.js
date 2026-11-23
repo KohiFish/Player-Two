@@ -31,6 +31,9 @@
           return m;
         }
         static subtract(a, b) {
+          if (a.rows !== b.rows || a.cols !== b.cols) {
+            throw new RangeError("Matrix dimensions must match");
+          }
           let result = new _Matrix(a.rows, a.cols);
           for (let i = 0; i < result.rows; i++) {
             for (let j = 0; j < result.cols; j++) {
@@ -57,6 +60,9 @@
         }
         add(n) {
           if (n instanceof _Matrix) {
+            if (this.rows !== n.rows || this.cols !== n.cols) {
+              throw new RangeError("Matrix dimensions must match");
+            }
             for (let i = 0; i < this.rows; i++) {
               for (let j = 0; j < this.cols; j++) {
                 this.data[i][j] += n.data[i][j];
@@ -81,8 +87,7 @@
         }
         static multiply(a, b) {
           if (a.cols !== b.rows) {
-            console.log("Columns of A must match rows of B.");
-            return void 0;
+            throw new RangeError("Columns of A must match rows of B");
           }
           let result = new _Matrix(a.rows, b.cols);
           for (let i = 0; i < result.rows; i++) {
@@ -146,9 +151,6 @@
       function sigmoid(x) {
         return 1 / (1 + Math.exp(-x));
       }
-      function dsigmoid(y) {
-        return y * (1 - y);
-      }
       var NeuralNetwork3 = class {
         constructor(input_nodes, hidden_nodes, output_nodes) {
           this.input_nodes = input_nodes;
@@ -165,41 +167,54 @@
           this.learning_rate = 0.1;
         }
         feedforward(input_array) {
+          if (input_array.length !== this.input_nodes) {
+            throw new RangeError(`Expected ${this.input_nodes} input values`);
+          }
           let inputs = Matrix.fromArray(input_array);
           let hidden = Matrix.multiply(this.weights_ih, inputs);
           hidden.add(this.bias_h);
           hidden.map(sigmoid);
           let output = Matrix.multiply(this.weights_ho, hidden);
           output.add(this.bias_o);
-          output.map(sigmoid);
           return output.toArray();
         }
-        train(input_array, target_array) {
-          let inputs = Matrix.fromArray(input_array);
-          let hidden = Matrix.multiply(this.weights_ih, inputs);
+        // copilot changes
+        trainQ(input_array, action, reward, next_input_array, done) {
+          if (!Number.isInteger(action) || action < 0 || action >= this.output_nodes) {
+            throw new RangeError(`Invalid action: ${action}`);
+          }
+          if (input_array.length !== this.input_nodes) {
+            throw new RangeError(`Expected ${this.input_nodes} input values`);
+          }
+          if (next_input_array.length !== this.input_nodes) {
+            throw new RangeError(`Expected ${this.input_nodes} next input values`);
+          }
+          const inputs = Matrix.fromArray(input_array);
+          const hidden = Matrix.multiply(this.weights_ih, inputs);
           hidden.add(this.bias_h);
           hidden.map(sigmoid);
-          let outputs = Matrix.multiply(this.weights_ho, hidden);
+          const outputs = Matrix.multiply(this.weights_ho, hidden);
           outputs.add(this.bias_o);
-          outputs.map(sigmoid);
-          let targets = Matrix.fromArray(target_array);
-          let output_errors = Matrix.subtract(targets, outputs);
-          let gradients = Matrix.map(outputs, dsigmoid);
-          gradients.multiply(output_errors);
-          gradients.multiply(this.learning_rate);
-          let hidden_T = Matrix.transpose(hidden);
-          let weight_ho_deltas = Matrix.multiply(gradients, hidden_T);
-          this.weights_ho.add(weight_ho_deltas);
-          this.bias_o.add(gradients);
-          let who_t = Matrix.transpose(this.weights_ho);
-          let hidden_errors = Matrix.multiply(who_t, output_errors);
-          let hidden_gradient = Matrix.map(hidden, dsigmoid);
-          hidden_gradient.multiply(hidden_errors);
-          hidden_gradient.multiply(this.learning_rate);
-          let inputs_T = Matrix.transpose(inputs);
-          let weight_ih_deltas = Matrix.multiply(hidden_gradient, inputs_T);
-          this.weights_ih.add(weight_ih_deltas);
-          this.bias_h.add(hidden_gradient);
+          const nextValues = this.feedforward(next_input_array);
+          const nextBest = Math.max(...nextValues);
+          const target = reward + (done ? 0 : 0.9 * nextBest);
+          const prediction = outputs.data[action][0];
+          const error = target - prediction;
+          const oldWeightsHO = this.weights_ho.data.map((row) => row.slice());
+          const outputGradient = error * this.learning_rate;
+          for (let j = 0; j < this.hidden_nodes; j++) {
+            this.weights_ho.data[action][j] += outputGradient * hidden.data[j][0];
+          }
+          this.bias_o.data[action][0] += outputGradient;
+          for (let j = 0; j < this.hidden_nodes; j++) {
+            const hiddenValue = hidden.data[j][0];
+            const hiddenError = oldWeightsHO[action][j] * error;
+            const hiddenGradient = hiddenError * hiddenValue * (1 - hiddenValue) * this.learning_rate;
+            for (let k = 0; k < this.input_nodes; k++) {
+              this.weights_ih.data[j][k] += hiddenGradient * inputs.data[k][0];
+            }
+            this.bias_h.data[j][0] += hiddenGradient;
+          }
         }
       };
       module.exports = NeuralNetwork3;
@@ -212,14 +227,16 @@
       var width = 50;
       var height = 10;
       var paddleLength = 3;
-      var brain = new NeuralNetwork(5, 5, 3);
+      var brain = new NeuralNetwork(6, 8, 3);
+      brain.learning_rate = 0.01;
       function getState() {
         return [
-          ballX / width,
-          ballY / height,
+          ballX / (width - 1),
+          ballY / (height - 1),
           p2 / (height - paddleLength),
           (vx + 1) / 2,
-          (vy + 1) / 2
+          (vy + 1) / 2,
+          (ballY - (p2 + paddleLength / 2)) / height
         ];
       }
       var p1 = 6;
@@ -230,61 +247,59 @@
       var vy = 1;
       var scoreP1 = 0;
       var scoreP2 = 0;
+      var previousState = null;
+      var previousAction = null;
+      var exploreChance = 1;
+      var gamesSeen = 0;
       document.addEventListener("keydown", (event) => {
         if (event.key === "ArrowUp") {
           p1 = Math.max(0, p1 - 1);
         }
         if (event.key === "ArrowDown") p1 = Math.min(height - paddleLength, p1 + 1);
       });
-      function update() {
-        ballX += vx;
-        ballY += vy;
-        p2Move();
-        if (ballY <= 0 || ballY >= height - 1) {
-          vy *= -1;
-        }
-        const leftPaddleRange = ballY >= p1 && ballY <= p1 + paddleLength;
-        const rightPaddleRange = ballY >= p2 && ballY <= p2 + paddleLength;
-        if (ballX <= 0 && leftPaddleRange) {
-          ballX = 1;
-          vx = Math.abs(vx);
-        }
-        if (ballX >= width - 1 && rightPaddleRange) {
-          ballX = width - 2;
-          vx = -Math.abs(vx);
-        }
-        scoring();
-      }
       function scoring() {
         if (ballX <= 0) {
           scoreP2++;
+          if (previousState !== null) {
+            brain.trainQ(previousState, previousAction, 2, getState(), true);
+          }
+          previousState = null;
+          previousAction = null;
           reset();
+          gamesSeen++;
+          exploreChance = Math.max(0.03, 0.2 * Math.exp(-gamesSeen / 200));
           return;
         }
         if (ballX >= width - 1) {
           scoreP1++;
+          if (previousState !== null) {
+            brain.trainQ(previousState, previousAction, -2, getState(), true);
+          }
+          previousState = null;
+          previousAction = null;
           reset();
+          gamesSeen++;
+          exploreChance = Math.max(0.03, 0.2 * Math.exp(-gamesSeen / 200));
           return;
         }
       }
-      var moveDirection = 1;
       function p2Move() {
         const state = getState();
-        const output = brain.feedforward(state);
-        if (Math.random() < 0.3) {
-          const action = output.indexOf(Math.max(...output));
-          if (action === 0) moveDirection = -1;
-          if (action === 2) moveDirection = 1;
+        if (previousState !== null) {
+          brain.trainQ(previousState, previousAction, 0, state, false);
         }
-        p2 += moveDirection;
-        if (p2 <= 0) {
-          p2 = 0;
-          moveDirection = 1;
+        const output = brain.feedforward(getState());
+        let action;
+        if (Math.random() < exploreChance) {
+          action = Math.floor(Math.random() * 3);
+        } else {
+          action = output.indexOf(Math.max(...output));
         }
-        if (p2 >= height - paddleLength) {
-          p2 = height - paddleLength;
-          moveDirection = -1;
-        }
+        if (action === 0) p2 -= 1;
+        if (action === 2) p2 += 1;
+        p2 = Math.max(0, Math.min(height - paddleLength, p2));
+        previousState = state;
+        previousAction = action;
       }
       function reset() {
         ballX = Math.floor(width / 2);
@@ -315,6 +330,35 @@
         update();
         draw();
         setTimeout(() => requestAnimationFrame(gameLoop), 100);
+      }
+      function bouncing() {
+        if (ballY <= 0) {
+          ballY = 1;
+          vy = Math.abs(vy);
+        } else if (ballY >= height - 1) {
+          ballY = height - 2;
+          vy = -Math.abs(vy);
+        }
+        const paddleRange = (paddleY) => ballY >= paddleY && ballY < paddleY + paddleLength;
+        if (ballX <= 1 && vx < 0 && paddleRange(p1)) {
+          ballX = 1;
+          vx = Math.abs(vx);
+        } else if (ballX >= width - 2 && vx > 0 && paddleRange(p2)) {
+          ballX = width - 2;
+          vx = -Math.abs(vx);
+          if (previousState !== null) {
+            brain.trainQ(previousState, previousAction, 1, getState(), false);
+            previousState = null;
+            previousAction = null;
+          }
+        }
+      }
+      function update() {
+        ballX += vx;
+        ballY += vy;
+        p2Move();
+        bouncing();
+        scoring();
       }
       gameLoop();
     }

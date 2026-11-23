@@ -9,7 +9,7 @@ brain.learning_rate = 0.01;
 
 function getState() {
   return [
-    ballX / (width + 1),
+    ballX / (width - 1),
     ballY / (height -1),
     p2 / (height - paddleLength),
     (vx + 1) / 2,
@@ -67,12 +67,26 @@ function handleKey(key) {
 function scoring() {
   if (ballX <= 0) {
     scoreP2++;
+    if (previousState !== null) {
+      brain.trainQ(previousState, previousAction, 2, getState(), true);
+    }
+    previousState = null;
+    previousAction = null;
     reset();
+    gamesSeen++;
+    exploreChance = Math.max(0.03, 0.2 * Math.exp(-gamesSeen / 200));
     return;
   }
   if (ballX >= width - 1) {
     scoreP1++;
+    if (previousState !== null) {
+      brain.trainQ(previousState, previousAction, -2, getState(), true);
+    }
+    previousState = null;
+    previousAction = null;
     reset();
+    gamesSeen++;
+    exploreChance = Math.max(0.03, 0.2 * Math.exp(-gamesSeen / 200));
     return;
   }
 }
@@ -92,13 +106,15 @@ function p2Move() {
   if (Math.random() < exploreChance) {
     action = Math.floor(Math.random() * 3);
   } else {
-    action = output.indexOf(Math.max(...values));
+    action = output.indexOf(Math.max(...output));
   }
 
   if (action === 0) p2 -= 1;
   if (action === 2) p2 += 1;
 
   p2 = Math.max(0, Math.min(height - paddleLength, p2));
+  previousState = state;
+  previousAction = action;
 }
 
 function reset() {
@@ -144,43 +160,35 @@ function gameLoop() {
   setTimeout(() => requestAnimationFrame(gameLoop), 100);
 }
 
-function trainP2() {
-  const state = getState();
-  const paddleCenter = p2 + paddleLength / 2;
-
-  const targets = [0, 0, 0];
-
-  if (vx > 0) {
-    if (ballY < paddleCenter - 0.5) {
-      targets[0] = 1;
-    } else if (ballY > paddleCenter + 0.5) {
-      targets[2] = 1;
-    } else {
-      targets[1] = 1;
-    }
-  } else {
-    targets[1] = 1;
-  }
-  brain.train(state, targets);
-}
 
 function bouncing() {
-  if (ballY <= 0 || ballY >= height - 1) {
-    vy *= -1;
+  if (ballY <= 0) {
+    ballY = 1;
+    vy = Math.abs(vy);
+  } else if (ballY >= height - 1) {
+    ballY = height - 2;
+    vy = -Math.abs(vy);
   }
 
-  const leftPaddleRange = ballY >= p1 && ballY <= p1 + paddleLength;
+  const paddleRange = (paddleY) =>
+    ballY >= paddleY && ballY < paddleY + paddleLength;
 
-  const rightPaddleRange = ballY >= p2 && ballY <= p2 + paddleLength;
-
-  if (ballX <= 0 && leftPaddleRange) {
+  if (ballX <= 1 && vx < 0 && paddleRange(p1)) {
     ballX = 1;
     vx = Math.abs(vx);
-  }
-
-  if (ballX >= width - 1 && rightPaddleRange) {
+  } else if (
+    ballX >= width - 2 &&
+    vx > 0 &&
+    paddleRange(p2)
+  ) {
     ballX = width - 2;
     vx = -Math.abs(vx);
+
+    if (previousState !== null) {
+      brain.trainQ(previousState, previousAction, 1, getState(), false);
+      previousState = null;
+      previousAction = null;
+    }
   }
 }
 
@@ -188,10 +196,7 @@ function update() {
   ballX += vx;
   ballY += vy;
 
-  trainP2();
   p2Move();
-  console.log(action, ballY, p2);
-
   bouncing();
   scoring();
 }

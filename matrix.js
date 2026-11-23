@@ -24,6 +24,10 @@ class Matrix {
   }
 
   static subtract(a, b) {
+    if (a.rows !== b.rows || a.cols !== b.cols) {
+      throw new RangeError("Matrix dimensions must match");
+    }
+
     // Return a new Matrix a-b
     let result = new Matrix(a.rows, a.cols);
     for (let i = 0; i < result.rows; i++) {
@@ -54,6 +58,10 @@ class Matrix {
 
   add(n) {
     if (n instanceof Matrix) {
+      if (this.rows !== n.rows || this.cols !== n.cols) {
+        throw new RangeError("Matrix dimensions must match");
+      }
+
       for (let i = 0; i < this.rows; i++) {
         for (let j = 0; j < this.cols; j++) {
           this.data[i][j] += n.data[i][j];
@@ -81,8 +89,7 @@ class Matrix {
   static multiply(a, b) {
     // Matrix product
     if (a.cols !== b.rows) {
-      console.log('Columns of A must match rows of B.')
-      return undefined;
+      throw new RangeError("Columns of A must match rows of B");
     }
     let result = new Matrix(a.rows, b.cols);
     for (let i = 0; i < result.rows; i++) {

@@ -39,6 +39,9 @@ class NeuralNetwork {
   }
 
   feedforward(input_array) {
+    if (input_array.length !== this.input_nodes) {
+      throw new RangeError(`Expected ${this.input_nodes} input values`);
+    }
 
     // Generating the Hidden Outputs
     let inputs = Matrix.fromArray(input_array);
@@ -50,13 +53,22 @@ class NeuralNetwork {
     // Generating the output's output!
     let output = Matrix.multiply(this.weights_ho, hidden);
     output.add(this.bias_o);
-    output.map(sigmoid);
 
     // Sending back to the caller!
     return output.toArray();
   }
 // copilot changes
   trainQ(input_array, action, reward, next_input_array, done) {
+  if (!Number.isInteger(action) || action < 0 || action >= this.output_nodes) {
+    throw new RangeError(`Invalid action: ${action}`);
+  }
+  if (input_array.length !== this.input_nodes) {
+    throw new RangeError(`Expected ${this.input_nodes} input values`);
+  }
+  if (next_input_array.length !== this.input_nodes) {
+    throw new RangeError(`Expected ${this.input_nodes} next input values`);
+  }
+
   const inputs = Matrix.fromArray(input_array);
 
   // Forward pass for the current state.
@@ -98,6 +110,7 @@ class NeuralNetwork {
     }
     this.bias_h.data[j][0] += hiddenGradient;
   }
+}
 }
 
 module.exports = NeuralNetwork;

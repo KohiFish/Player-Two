@@ -5,6 +5,7 @@ const paddleLength = 3; //fixed the length and size
 
 // outputs: 0 - move up, 1 - stay, 2 - move down
 const brain = new NeuralNetwork(5, 5, 3);
+brain.learning_rate = 0.01;
 
 function getState() {
   return [
@@ -172,6 +173,7 @@ function update() {
 
   trainP2();
   p2Move();
+  console.log(action, ballY, p2);
 
   bouncing();
   scoring();

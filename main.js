@@ -99,30 +99,13 @@ let moveDirection = 1;
 let moveCounter = 0;
 
 function p2Move() {
-  const state = getState();
-  const output = brain.feedforward(state);
+  const output = brain.feedfoward(getState());
+  const action = output.indexOf(Math.max(...output));
 
-  // Occasionally let the NN choose its direction
-  if (Math.random() < 0.3) {
-    const action = output.indexOf(Math.max(...output));
+  if (action === 0) p2 -= 1;
+  if (action === 2) p2 += 1;
 
-    if (action === 0) moveDirection = -1;
-    if (action === 2) moveDirection = 1;
-  }
-
-  // Move consistently
-  p2 += moveDirection;
-
-  // Reverse at the edges
-  if (p2 <= 0) {
-    p2 = 0;
-    moveDirection = 1;
-  }
-
-  if (p2 >= height - paddleLength) {
-    p2 = height - paddleLength;
-    moveDirection = -1;
-  }
+  p2 = Math.max(0, Math.min(height - paddleLength, p2));
 }
 
 function reset() {
@@ -168,4 +151,28 @@ function gameLoop() {
   setTimeout(() => requestAnimationFrame(gameLoop), 100);
 }
 
+function trainP2() {
+  const state = getState();
+  const paddleCenter = p2 + paddleLength / 2;
+
+  const targets = [0, 0, 0];
+
+  if (vx > 0)
+    if (ballY < paddleCenter - 0.5) {
+      target[0] = 1;
+    } else if (ballY > paddleCenter + 0.5) {
+      target[2] = 1;
+    } else {
+      target[1] = 1;
+    }
+  brain.train(state, target);
+}
+
+function update() {
+  ballX += vx;
+  ballY += vy;
+
+  trainP2();
+  p2Move();
+}
 gameLoop();

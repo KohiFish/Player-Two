@@ -1,4 +1,3 @@
-const NeuralNetwork = require("./nn.js");
 // quick game of ping pong
 const width = 50;
 const height = 10;
@@ -6,6 +5,7 @@ const paddleLength = 3; //fixed the length and size
 
 // outputs: 0 - move up, 1 - stay, 2 - move down
 const brain = new NeuralNetwork(5, 5, 3);
+brain.learning_rate = 0.01;
 
 function getState() {
   return [
@@ -37,11 +37,13 @@ let vy = 1;
 let scoreP1 = 0;
 let scoreP2 = 0;
 
-if (process.stdin.isTTY && process.stdin.setRawMode) {
-  process.stdin.setRawMode(true);
-  process.stdin.resume();
-  process.stdin.setEncoding("utf-8");
-}
+document.addEventListener("keydown", (event) => {
+  if (event.key === "ArrowUp") {
+    p1 = Math.max(0, p1 - 1);
+  }
+
+  if (event.key === "ArrowDown") p1 = Math.min(height - paddleLength, p1 + 1);
+});
 
 function handleKey(key) {
   if (key === "\u001b[A") {
@@ -54,41 +56,6 @@ function handleKey(key) {
   //} else if (key === 's' || key === 'S') {
   //   p2 = Math.min(height - paddleLength, p2 + 1);
   //}
-}
-
-process.stdin.on("data", (chunk) => {
-  const key = chunk.toString();
-
-  if (key === "\u0003") {
-    process.exit();
-  }
-
-  handleKey(key);
-});
-
-function update() {
-  ballX += vx;
-  ballY += vy;
-
-  p2Move();
-
-  if (ballY <= 0 || ballY >= height - 1) {
-    vy *= -1;
-  }
-
-  const leftPaddleRange = ballY >= p1 && ballY <= p1 + paddleLength;
-  const rightPaddleRange = ballY >= p2 && ballY <= p2 + paddleLength;
-
-  if (ballX <= 0 && leftPaddleRange) {
-    ballX = 1;
-    vx = Math.abs(vx);
-  }
-
-  if (ballX >= width - 1 && rightPaddleRange) {
-    ballX = width - 2;
-    vx = -Math.abs(vx);
-  }
-  scoring();
 }
 
 function scoring() {
@@ -108,30 +75,13 @@ let moveDirection = 1;
 let moveCounter = 0;
 
 function p2Move() {
-  const state = getState();
-  const output = brain.feedforward(state);
+  const output = brain.feedforward(getState());
+  const action = output.indexOf(Math.max(...output));
 
-  // Occasionally let the NN choose its direction
-  if (Math.random() < 0.3) {
-    const action = output.indexOf(Math.max(...output));
+  if (action === 0) p2 -= 1;
+  if (action === 2) p2 += 1;
 
-    if (action === 0) moveDirection = -1;
-    if (action === 2) moveDirection = 1;
-  }
-
-  // Move consistently
-  p2 += moveDirection;
-
-  // Reverse at the edges
-  if (p2 <= 0) {
-    p2 = 0;
-    moveDirection = 1;
-  }
-
-  if (p2 >= height - paddleLength) {
-    p2 = height - paddleLength;
-    moveDirection = -1;
-  }
+  p2 = Math.max(0, Math.min(height - paddleLength, p2));
 }
 
 function reset() {
@@ -141,29 +91,92 @@ function reset() {
   vy = Math.random() < 0.5 ? -1 : 1;
 }
 
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
 function draw() {
-  console.clear();
-  console.log(`PLAYER: ${scoreP1} | NN: ${scoreP2}`);
+  const scaleX = canvas.width / width;
+  const scaleY = canvas.height / height;
 
-  for (let y = 0; y < height; y++) {
-    let row = "";
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    for (let x = 0; x < width; x++) {
-      if (x === ballX && y === ballY) {
-        row += "O";
-      } else if (x === 0 && y >= p1 && y <= p1 + paddleLength) {
-        row += "|";
-      } else if (x === width - 1 && y >= p2 && y <= p2 + paddleLength) {
-        row += "|";
-      } else {
-        row += ".";
-      }
+  ctx.fillStyle = "white";
+
+  //Ball
+  ctx.fillRect(ballX * scaleX, ballY * scaleY, scaleX, scaleY);
+
+  //controllable paddle
+  ctx.fillRect(0, p1 * scaleY, scaleX, paddleLength * scaleY);
+
+  //nn paddle
+  ctx.fillRect(
+    canvas.width - scaleX,
+    p2 * scaleY,
+    scaleX,
+    paddleLength * scaleY,
+  );
+
+  ctx.font = "20px Arial";
+  ctx.fillText(`PLAYER: ${scoreP1} | NN: ${scoreP2}`, 20, 30);
+}
+
+function gameLoop() {
+  update();
+  draw();
+  setTimeout(() => requestAnimationFrame(gameLoop), 100);
+}
+
+function trainP2() {
+  const state = getState();
+  const paddleCenter = p2 + paddleLength / 2;
+
+  const targets = [0, 0, 0];
+
+  if (vx > 0) {
+    if (ballY < paddleCenter - 0.5) {
+      targets[0] = 1;
+    } else if (ballY > paddleCenter + 0.5) {
+      targets[2] = 1;
+    } else {
+      targets[1] = 1;
     }
-    console.log(row);
+  } else {
+    targets[1] = 1;
+  }
+  brain.train(state, targets);
+}
+
+function bouncing() {
+  if (ballY <= 0 || ballY >= height - 1) {
+    vy *= -1;
+  }
+
+  const leftPaddleRange = ballY >= p1 && ballY <= p1 + paddleLength;
+
+  const rightPaddleRange = ballY >= p2 && ballY <= p2 + paddleLength;
+
+  if (ballX <= 0 && leftPaddleRange) {
+    ballX = 1;
+    vx = Math.abs(vx);
+  }
+
+  if (ballX >= width - 1 && rightPaddleRange) {
+    ballX = width - 2;
+    vx = -Math.abs(vx);
   }
 }
 
-setInterval(() => {
-  update();
-  draw();
-}, 100);
+function update() {
+  ballX += vx;
+  ballY += vy;
+
+  trainP2();
+  p2Move();
+  console.log(action, ballY, p2);
+
+  bouncing();
+  scoring();
+}
+
+gameLoop();

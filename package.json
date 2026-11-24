@@ -1,1 +1,8 @@
-{}
+{
+  "scripts": {
+    "build": "esbuild browser-entry.js --bundle --platform=browser --outfile=game.js"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

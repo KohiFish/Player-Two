@@ -149,10 +149,10 @@ function trainP2() {
 
 function bouncing() {
   if (ballY <= 0) {
-    ballY = 1;
+    ballY = 0;
     vy = Math.abs(vy);
   } else if (ballY >= height - 1) {
-    ballY = height - 2;
+    ballY = height - 1;
     vy = -Math.abs(vy);
   }
 

@@ -148,20 +148,21 @@ function trainP2() {
 }
 
 function bouncing() {
-  if (ballY <= 0 || ballY >= height - 1) {
-    vy *= -1;
+  if (ballY <= 0) {
+    ballY = 1;
+    vy = Math.abs(vy);
+  } else if (ballY >= height - 1) {
+    ballY = height - 2;
+    vy = -Math.abs(vy);
   }
 
-  const leftPaddleRange = ballY >= p1 && ballY <= p1 + paddleLength;
+  const paddleRange = (paddleY) =>
+    ballY >= paddleY && ballY < paddleY + paddleLength;
 
-  const rightPaddleRange = ballY >= p2 && ballY <= p2 + paddleLength;
-
-  if (ballX <= 0 && leftPaddleRange) {
+  if (ballX <= 1 && vx < 0 && paddleRange(p1)) {
     ballX = 1;
     vx = Math.abs(vx);
-  }
-
-  if (ballX >= width - 1 && rightPaddleRange) {
+  } else if (ballX >= width - 2 && vx > 0 && paddleRange(p2)) {
     ballX = width - 2;
     vx = -Math.abs(vx);
   }
@@ -173,7 +174,6 @@ function update() {
 
   trainP2();
   p2Move();
-  console.log(action, ballY, p2);
 
   bouncing();
   scoring();
